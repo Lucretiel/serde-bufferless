@@ -244,6 +244,33 @@ where
     {
         self.send_to_seed(deserializer.into_deserializer())
     }
+
+    fn send_to_capture<T, D>(
+        self,
+        key: T,
+        into_de: impl FnOnce(T) -> D,
+    ) -> Result<FlattenKeySeedOutcome<'de, C::Token, S>, D::Error>
+    where
+        T: AsRef<[u8]>,
+        D: de::Deserializer<'de>,
+    {
+        match self.capture.try_send_key(key.as_ref()) {
+            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
+            None => self.send_to_seed(into_de(key)),
+        }
+    }
+
+    fn send_into_to_capture<T, E>(
+        self,
+        key: T,
+    ) -> Result<FlattenKeySeedOutcome<'de, C::Token, S>, E>
+    where
+        T: AsRef<[u8]>,
+        T: de::IntoDeserializer<'de, E>,
+        E: de::Error,
+    {
+        self.send_to_capture(key, |key| key.into_deserializer())
+    }
 }
 
 impl<'a, 'de, S, C> de::Visitor<'de> for FlattenKeySeed<'a, S, C>
@@ -361,10 +388,7 @@ where
     where
         E: de::Error,
     {
-        match self.capture.try_send_key(v.as_bytes()) {
-            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
-            None => self.send_into_to_seed(v),
-        }
+        self.send_into_to_capture(v)
     }
 
     #[cfg(feature = "std")]
@@ -372,30 +396,21 @@ where
     where
         E: de::Error,
     {
-        match self.capture.try_send_key(v.as_bytes()) {
-            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
-            None => self.send_into_to_seed(v),
-        }
+        self.send_into_to_capture(v)
     }
 
     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        match self.capture.try_send_key(v.as_bytes()) {
-            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
-            None => self.send_to_seed(de::value::BorrowedStrDeserializer::new(v)),
-        }
+        self.send_to_capture(v, de::value::BorrowedStrDeserializer::new)
     }
 
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        match self.capture.try_send_key(v) {
-            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
-            None => self.send_to_seed(de::value::BytesDeserializer::new(v)),
-        }
+        self.send_to_capture(v, de::value::BytesDeserializer::new)
     }
 
     #[cfg(feature = "std")]
@@ -405,20 +420,14 @@ where
     {
         use super::ByteBufDeserializer;
 
-        match self.capture.try_send_key(&v) {
-            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
-            None => self.send_to_seed(ByteBufDeserializer::new(v)),
-        }
+        self.send_to_capture(v, ByteBufDeserializer::new)
     }
 
     fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        match self.capture.try_send_key(v) {
-            Some(token) => Ok(FlattenKeySeedOutcome::Accepted(self.seed, token)),
-            None => self.send_to_seed(de::value::BytesDeserializer::new(v)),
-        }
+        self.send_to_capture(v, de::value::BorrowedBytesDeserializer::new)
     }
 
     fn visit_none<E>(self) -> Result<Self::Value, E>

@@ -67,6 +67,8 @@ where
     D: de::Deserializer<'de>,
     C: KeyCapture<'de>,
 {
+    #[inline]
+    #[must_use]
     pub fn new(deserializer: D, capture: C) -> Self {
         Self {
             deserializer,
@@ -82,6 +84,7 @@ where
 {
     type Error = D::Error;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
@@ -98,6 +101,7 @@ where
         tuple_struct map struct enum identifier
     }
 
+    #[inline]
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
@@ -118,6 +122,7 @@ where
 {
     type Value = V::Value;
 
+    #[inline]
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         self.capture.expecting(formatter)
     }
@@ -179,6 +184,7 @@ where
         }
     }
 
+    #[inline]
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
     where
         V: de::DeserializeSeed<'de>,
@@ -209,6 +215,7 @@ where
 {
     type Value = FlattenKeySeedOutcome<'de, C::Token, S>;
 
+    #[inline]
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -234,6 +241,7 @@ where
             .map(FlattenKeySeedOutcome::Rejected)
     }
 
+    #[inline]
     fn send_into_to_seed<T, E>(
         self,
         deserializer: T,
@@ -260,6 +268,7 @@ where
         }
     }
 
+    #[inline]
     fn send_into_to_capture<T, E>(
         self,
         key: T,
@@ -284,6 +293,7 @@ where
         write!(formatter, "field identifier")
     }
 
+    #[inline]
     fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -291,6 +301,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_i8<E>(self, v: i8) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -298,6 +309,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_i16<E>(self, v: i16) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -305,6 +317,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -312,6 +325,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -320,6 +334,7 @@ where
     }
 
     serde_if_integer128! {
+        #[inline]
         fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
         where
             E: de::Error,
@@ -327,6 +342,7 @@ where
             self.send_into_to_seed(v)
         }
 
+        #[inline]
         fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
         where
             E: de::Error,
@@ -335,6 +351,7 @@ where
         }
     }
 
+    #[inline]
     fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -342,6 +359,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -349,6 +367,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -356,6 +375,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -363,6 +383,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -370,6 +391,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -377,6 +399,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_char<E>(self, v: char) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -384,6 +407,7 @@ where
         self.send_into_to_seed(v)
     }
 
+    #[inline]
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -392,6 +416,7 @@ where
     }
 
     #[cfg(feature = "std")]
+    #[inline]
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -399,6 +424,7 @@ where
         self.send_into_to_capture(v)
     }
 
+    #[inline]
     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -406,6 +432,7 @@ where
         self.send_to_capture(v, de::value::BorrowedStrDeserializer::new)
     }
 
+    #[inline]
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -414,6 +441,7 @@ where
     }
 
     #[cfg(feature = "std")]
+    #[inline]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -423,6 +451,7 @@ where
         self.send_to_capture(v, ByteBufDeserializer::new)
     }
 
+    #[inline]
     fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -430,6 +459,7 @@ where
         self.send_to_capture(v, de::value::BorrowedBytesDeserializer::new)
     }
 
+    #[inline]
     fn visit_none<E>(self) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -437,6 +467,7 @@ where
         self.send_into_to_seed(())
     }
 
+    #[inline]
     fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -444,6 +475,7 @@ where
         self.send_to_seed(SomeDeserializer::new(deserializer))
     }
 
+    #[inline]
     fn visit_unit<E>(self) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -451,6 +483,7 @@ where
         self.send_into_to_seed(())
     }
 
+    #[inline]
     fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -458,6 +491,7 @@ where
         self.send_to_seed(NewtypeDeserializer::new(deserializer))
     }
 
+    #[inline]
     fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
     where
         A: de::SeqAccess<'de>,
@@ -465,6 +499,7 @@ where
         self.send_to_seed(de::value::SeqAccessDeserializer::new(seq))
     }
 
+    #[inline]
     fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
     where
         A: de::MapAccess<'de>,
@@ -472,6 +507,7 @@ where
         self.send_to_seed(de::value::MapAccessDeserializer::new(map))
     }
 
+    #[inline]
     fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
     where
         A: de::EnumAccess<'de>,
@@ -491,6 +527,7 @@ where
 {
     type Value = ();
 
+    #[inline]
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: serde::Deserializer<'de>,

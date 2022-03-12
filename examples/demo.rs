@@ -12,7 +12,6 @@ struct Inner {
     float: f32,
 }
 
-// This is what would be generated on a derive(Deserialize) for this type
 #[derive(Debug)]
 struct Outer {
     float: f32,
@@ -21,7 +20,9 @@ struct Outer {
     //#[serde(flatten)]
     inner: Inner,
 }
-
+/////////////////////////////////////////////////////////////////////////
+// This is what would be generated on a derive(Deserialize) for this type
+/////////////////////////////////////////////////////////////////////////
 impl<'de> Deserialize<'de> for Outer {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

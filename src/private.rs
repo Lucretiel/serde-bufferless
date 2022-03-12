@@ -15,12 +15,15 @@ struct FusedAccess<A> {
 }
 
 impl<A> FusedAccess<A> {
+    #[inline]
+    #[must_use]
     pub fn new(access: A) -> Self {
         Self {
             access: Some(access),
         }
     }
 
+    #[inline]
     fn next_item<T, E>(
         &mut self,
         op: impl FnOnce(&mut A) -> Result<Option<T>, E>,
@@ -41,6 +44,7 @@ impl<A> FusedAccess<A> {
 impl<'de, A: de::SeqAccess<'de>> de::SeqAccess<'de> for FusedAccess<A> {
     type Error = A::Error;
 
+    #[inline]
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
     where
         T: de::DeserializeSeed<'de>,
@@ -52,6 +56,7 @@ impl<'de, A: de::SeqAccess<'de>> de::SeqAccess<'de> for FusedAccess<A> {
 impl<'de, A: de::MapAccess<'de>> de::MapAccess<'de> for FusedAccess<A> {
     type Error = A::Error;
 
+    #[inline]
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
     where
         K: de::DeserializeSeed<'de>,
@@ -59,6 +64,7 @@ impl<'de, A: de::MapAccess<'de>> de::MapAccess<'de> for FusedAccess<A> {
         self.next_item(|access| access.next_key_seed(seed))
     }
 
+    #[inline]
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
     where
         V: de::DeserializeSeed<'de>,
@@ -69,6 +75,7 @@ impl<'de, A: de::MapAccess<'de>> de::MapAccess<'de> for FusedAccess<A> {
             .next_value_seed(seed)
     }
 
+    #[inline]
     fn next_entry_seed<K, V>(
         &mut self,
         key: K,
@@ -91,6 +98,8 @@ impl<'de, T> EnumDeserializer<T>
 where
     T: de::EnumAccess<'de>,
 {
+    #[inline]
+    #[must_use]
     pub fn new(value: T) -> Self {
         Self { value }
     }
@@ -102,6 +111,7 @@ where
 {
     type Error = T::Error;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
@@ -124,6 +134,8 @@ impl<'de, T> NewtypeDeserializer<T>
 where
     T: de::Deserializer<'de>,
 {
+    #[inline]
+    #[must_use]
     pub fn new(deserializer: T) -> Self {
         Self { deserializer }
     }
@@ -135,6 +147,7 @@ where
 {
     type Error = T::Error;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
@@ -156,6 +169,8 @@ impl<'de, T> SomeDeserializer<T>
 where
     T: de::Deserializer<'de>,
 {
+    #[inline]
+    #[must_use]
     pub fn new(deserializer: T) -> Self {
         Self { deserializer }
     }
@@ -167,6 +182,7 @@ where
 {
     type Error = T::Error;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
@@ -187,6 +203,8 @@ pub struct ByteBufDeserializer<E> {
 }
 
 impl<E> ByteBufDeserializer<E> {
+    #[inline]
+    #[must_use]
     pub fn new(buf: Vec<u8>) -> Self {
         Self {
             buf,
@@ -201,6 +219,7 @@ where
 {
     type Error = E;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, E>
     where
         V: de::Visitor<'de>,

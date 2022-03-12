@@ -27,13 +27,13 @@ impl<A> FusedAccess<A> {
     ) -> Result<Option<T>, E> {
         match self.access {
             None => Ok(None),
-            Some(ref mut access) => {
-                let value = op(access);
-                if value.as_ref().map(Option::is_none).unwrap_or(false) {
-                    self.access = None
+            Some(ref mut access) => op(access).map(|item| match item {
+                None => {
+                    self.access = None;
+                    None
                 }
-                value
-            }
+                Some(item) => Some(item),
+            }),
         }
     }
 }

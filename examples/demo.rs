@@ -28,17 +28,26 @@ impl<'de> Deserialize<'de> for Outer {
     where
         D: serde::Deserializer<'de>,
     {
+        // The Field enum is generated for each non-flatten field
         #[allow(non_camel_case_types)]
         enum Field {
             float,
             boolean,
         }
 
+        // The Capture struct is generated, containing an Option for each
+        // non-capture field
         struct Capture {
             float: Option<f32>,
             boolean: Option<bool>,
         }
 
+        // KeyCapture is implemented such that `try_send_key` detects
+        // non-flatten keys and returns the matching Field, if it matches,
+        // and the `send_value` deserializes the relevant value based on the
+        // `Field`. The methods are inlined so that control flow analysis
+        // will notice the association between the return value of
+        // `try_send_key` and the `match` in `send_value`
         impl<'de> KeyCapture<'de> for &mut Capture {
             type Token = Field;
 
@@ -52,11 +61,11 @@ impl<'de> Deserialize<'de> for Outer {
             }
 
             #[inline]
-            fn send_value<D>(&mut self, token: Self::Token, value: D) -> Result<(), D::Error>
+            fn send_value<D>(&mut self, field: Self::Token, value: D) -> Result<(), D::Error>
             where
                 D: serde::de::Deserializer<'de>,
             {
-                match token {
+                match field {
                     Field::float => self.float = Some(Deserialize::deserialize(value)?),
                     Field::boolean => self.boolean = Some(Deserialize::deserialize(value)?),
                 }
@@ -74,6 +83,9 @@ impl<'de> Deserialize<'de> for Outer {
             boolean: None,
         };
 
+        // After the `Capture` is created, we use a `FlattenDeserializer` to
+        // deserialize the flattened field. The `FlattenDeserializer` will
+        // populate `capture` while this is happening
         let inner = Deserialize::deserialize(FlattenDeserializer::new(deserializer, &mut capture))?;
 
         let float = capture

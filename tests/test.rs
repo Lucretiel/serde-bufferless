@@ -109,10 +109,15 @@ impl<'de> Deserialize<'de> for Outer {
 fn one_field() {
     let data: Outer = serde_json::from_str(
         r#"{
+            "_1": 1,
             "integer": 10,
+            "_2": 2,
             "before": 10.5,
+            "_3": 3,
             "string": "hello",
-            "after": true
+            "_4": 4,
+            "after": true,
+            "_5": 5
         }"#,
     )
     .expect("failed to parse JSON");

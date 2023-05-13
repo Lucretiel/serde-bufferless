@@ -7,18 +7,18 @@ struct Inner {
     integer: i32,
     string: String,
 
-    /// `before` is captured by `Outer` and never reaches this point
+    /// `before` is captured by `Flatten` and never reaches this point
     #[serde(default)]
     before: f32,
 }
 
 #[derive(Debug, PartialEq)]
-struct Outer {
+struct Flatten<T> {
     // #[serde(default)]
     before: Option<f32>,
 
     //#[serde(flatten)]
-    inner: Inner,
+    inner: T,
 
     // #[serde(default)]
     after: Option<bool>,
@@ -26,7 +26,10 @@ struct Outer {
 /////////////////////////////////////////////////////////////////////////
 // This is what would be generated on a derive(Deserialize) for this type
 /////////////////////////////////////////////////////////////////////////
-impl<'de> Deserialize<'de> for Outer {
+impl<'de, T> Deserialize<'de> for Flatten<T>
+where
+    T: Deserialize<'de>,
+{
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -77,7 +80,7 @@ impl<'de> Deserialize<'de> for Outer {
             }
 
             fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
-                write!(formatter, "struct Outer")
+                write!(formatter, "struct Flatten")
             }
         }
 
@@ -113,7 +116,7 @@ impl<'de> Deserialize<'de> for Outer {
 
 #[test]
 fn one_field() {
-    let data: Outer = serde_json::from_str(
+    let data: Flatten<Inner> = serde_json::from_str(
         r#"{
             "_1": 1,
             "integer": 10,
@@ -130,12 +133,50 @@ fn one_field() {
 
     assert_eq!(
         data,
-        Outer {
+        Flatten {
             before: Some(10.5),
             inner: Inner {
                 integer: 10,
                 string: "hello".to_string(),
                 before: 0.0,
+            },
+            after: Some(true),
+        }
+    );
+}
+
+#[test]
+fn nested() {
+    let data: Flatten<Flatten<Inner>> = serde_json::from_str(
+        r#"{
+            "_1": 1,
+            "integer": 10,
+            "_2": 2,
+            "before": 10.5,
+            "_3": 3,
+            "string": "hello",
+            "_4": 4,
+            "after": true,
+            "_5": 5
+        }"#,
+    )
+    .expect("failed to parse JSON");
+
+    assert_eq!(
+        data,
+        Flatten {
+            before: Some(10.5),
+            inner: Flatten {
+                // The field with this name already consumed by outer struct
+                before: None,
+                inner: Inner {
+                    integer: 10,
+                    string: "hello".to_string(),
+                    before: 0.0,
+                },
+                // The field with this name already consumed by the outer struct
+                // even when outer field defined after the flattened field
+                after: None,
             },
             after: Some(true),
         }

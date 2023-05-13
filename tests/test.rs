@@ -7,18 +7,19 @@ struct Inner {
     integer: i32,
     string: String,
 
-    /// `float` is captured by `Outer` and never reaches this point
+    /// `before` is captured by `Outer` and never reaches this point
     #[serde(default)]
-    float: f32,
+    before: f32,
 }
 
 #[derive(Debug, PartialEq)]
 struct Outer {
-    float: f32,
-    boolean: bool,
+    before: f32,
 
     //#[serde(flatten)]
     inner: Inner,
+
+    after: bool,
 }
 /////////////////////////////////////////////////////////////////////////
 // This is what would be generated on a derive(Deserialize) for this type
@@ -31,15 +32,15 @@ impl<'de> Deserialize<'de> for Outer {
         // The Field enum is generated for each non-flatten field
         #[allow(non_camel_case_types)]
         enum Field {
-            float,
-            boolean,
+            before,
+            after,
         }
 
         // The Capture struct is generated, containing an Option for each
         // non-capture field
         struct Capture {
-            float: Option<f32>,
-            boolean: Option<bool>,
+            before: Option<f32>,
+            after: Option<bool>,
         }
 
         // KeyCapture is implemented such that `try_send_key` detects
@@ -54,8 +55,8 @@ impl<'de> Deserialize<'de> for Outer {
             #[inline]
             fn try_send_key(&mut self, key: &[u8]) -> Option<Self::Token> {
                 match key {
-                    b"float" => Some(Field::float),
-                    b"boolean" => Some(Field::boolean),
+                    b"before" => Some(Field::before),
+                    b"after" => Some(Field::after),
                     _ => None,
                 }
             }
@@ -66,8 +67,8 @@ impl<'de> Deserialize<'de> for Outer {
                 D: serde::de::Deserializer<'de>,
             {
                 match field {
-                    Field::float => self.float = Some(Deserialize::deserialize(value)?),
-                    Field::boolean => self.boolean = Some(Deserialize::deserialize(value)?),
+                    Field::before => self.before = Some(Deserialize::deserialize(value)?),
+                    Field::after => self.after = Some(Deserialize::deserialize(value)?),
                 }
 
                 Ok(())
@@ -79,8 +80,8 @@ impl<'de> Deserialize<'de> for Outer {
         }
 
         let mut capture = Capture {
-            float: None,
-            boolean: None,
+            before: None,
+            after: None,
         };
 
         // After the `Capture` is created, we use a `FlattenDeserializer` to
@@ -88,18 +89,18 @@ impl<'de> Deserialize<'de> for Outer {
         // populate `capture` while this is happening
         let inner = Deserialize::deserialize(FlattenDeserializer::new(deserializer, &mut capture))?;
 
-        let float = capture
-            .float
-            .ok_or_else(|| de::Error::missing_field("float"))?;
+        let before = capture
+            .before
+            .ok_or_else(|| de::Error::missing_field("before"))?;
 
-        let boolean = capture
-            .boolean
-            .ok_or_else(|| de::Error::missing_field("boolean"))?;
+        let after = capture
+            .after
+            .ok_or_else(|| de::Error::missing_field("after"))?;
 
         Ok(Self {
-            float,
-            boolean,
+            before,
             inner,
+            after,
         })
     }
 }
@@ -109,9 +110,9 @@ fn one_field() {
     let data: Outer = serde_json::from_str(
         r#"{
             "integer": 10,
-            "float": 10.5,
+            "before": 10.5,
             "string": "hello",
-            "boolean": true
+            "after": true
         }"#,
     )
     .expect("failed to parse JSON");
@@ -119,14 +120,13 @@ fn one_field() {
     assert_eq!(
         data,
         Outer {
-            float: 10.5,
-            boolean: true,
-
+            before: 10.5,
             inner: Inner {
                 integer: 10,
                 string: "hello".to_string(),
-                float: 0.0,
+                before: 0.0,
             },
+            after: true,
         }
     );
 }

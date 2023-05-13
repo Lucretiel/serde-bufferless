@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use serde::{de, Deserialize};
+use serde::{Deserialize, Deserializer};
 use serde_bufferless::private::flatten::{FlattenDeserializer, KeyCapture};
 
 #[derive(Debug, PartialEq, Deserialize)]
@@ -14,12 +14,14 @@ struct Inner {
 
 #[derive(Debug, PartialEq)]
 struct Outer {
-    before: f32,
+    // #[serde(default)]
+    before: Option<f32>,
 
     //#[serde(flatten)]
     inner: Inner,
 
-    after: bool,
+    // #[serde(default)]
+    after: Option<bool>,
 }
 /////////////////////////////////////////////////////////////////////////
 // This is what would be generated on a derive(Deserialize) for this type
@@ -27,7 +29,7 @@ struct Outer {
 impl<'de> Deserialize<'de> for Outer {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         // The Field enum is generated for each non-flatten field
         #[allow(non_camel_case_types)]
@@ -39,8 +41,8 @@ impl<'de> Deserialize<'de> for Outer {
         // The Capture struct is generated, containing an Option for each
         // non-capture field
         struct Capture {
-            before: Option<f32>,
-            after: Option<bool>,
+            before: Option<Option<f32>>,
+            after: Option<Option<bool>>,
         }
 
         // KeyCapture is implemented such that `try_send_key` detects
@@ -64,7 +66,7 @@ impl<'de> Deserialize<'de> for Outer {
             #[inline]
             fn send_value<D>(&mut self, field: Self::Token, value: D) -> Result<(), D::Error>
             where
-                D: serde::de::Deserializer<'de>,
+                D: Deserializer<'de>,
             {
                 match field {
                     Field::before => self.before = Some(Deserialize::deserialize(value)?),
@@ -91,11 +93,15 @@ impl<'de> Deserialize<'de> for Outer {
 
         let before = capture
             .before
-            .ok_or_else(|| de::Error::missing_field("before"))?;
+            // This code should generated without `#[serde(default)]`
+            // .ok_or_else(|| de::Error::missing_field("before"))?;
+            .unwrap_or_default();
 
         let after = capture
             .after
-            .ok_or_else(|| de::Error::missing_field("after"))?;
+            // This code should generated without `#[serde(default)]`
+            // .ok_or_else(|| de::Error::missing_field("after"))?;
+            .unwrap_or_default();
 
         Ok(Self {
             before,
@@ -125,13 +131,13 @@ fn one_field() {
     assert_eq!(
         data,
         Outer {
-            before: 10.5,
+            before: Some(10.5),
             inner: Inner {
                 integer: 10,
                 string: "hello".to_string(),
                 before: 0.0,
             },
-            after: true,
+            after: Some(true),
         }
     );
 }

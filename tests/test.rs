@@ -104,6 +104,7 @@ impl<'de> Deserialize<'de> for Outer {
     }
 }
 
+#[test]
 fn main() -> anyhow::Result<()> {
     let data: Outer = serde_json::from_str(
         r#"{

@@ -1,8 +1,8 @@
-use anyhow::Context;
+use pretty_assertions::assert_eq;
 use serde::{de, Deserialize};
 use serde_bufferless::private::flatten::{FlattenDeserializer, KeyCapture};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize)]
 struct Inner {
     integer: i32,
     string: String,
@@ -12,7 +12,7 @@ struct Inner {
     float: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Outer {
     float: f32,
     boolean: bool,
@@ -105,7 +105,7 @@ impl<'de> Deserialize<'de> for Outer {
 }
 
 #[test]
-fn main() -> anyhow::Result<()> {
+fn one_field() {
     let data: Outer = serde_json::from_str(
         r#"{
             "integer": 10,
@@ -114,9 +114,19 @@ fn main() -> anyhow::Result<()> {
             "boolean": true
         }"#,
     )
-    .context("failed to parse json")?;
+    .expect("failed to parse JSON");
 
-    println!("{:#?}", data);
+    assert_eq!(
+        data,
+        Outer {
+            float: 10.5,
+            boolean: true,
 
-    Ok(())
+            inner: Inner {
+                integer: 10,
+                string: "hello".to_string(),
+                float: 0.0,
+            },
+        }
+    );
 }

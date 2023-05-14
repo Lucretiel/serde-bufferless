@@ -5,8 +5,6 @@ bufferless deserialization
 
 pub mod flatten;
 
-use std::marker::PhantomData;
-
 use serde::{de, forward_to_deserialize_any};
 
 /// Struct to fuse a MapAccess or a SeqAccess
@@ -197,22 +195,25 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 pub struct ByteBufDeserializer<E> {
     buf: Vec<u8>,
-    phantom: PhantomData<E>,
+    phantom: std::marker::PhantomData<E>,
 }
 
+#[cfg(feature = "std")]
 impl<E> ByteBufDeserializer<E> {
     #[inline]
     #[must_use]
     pub fn new(buf: Vec<u8>) -> Self {
         Self {
             buf,
-            phantom: PhantomData,
+            phantom: std::marker::PhantomData,
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl<'de, E> de::Deserializer<'de> for ByteBufDeserializer<E>
 where
     E: de::Error,
